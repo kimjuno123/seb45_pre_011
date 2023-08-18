@@ -2,6 +2,7 @@ package com.example.seb45pre011.member;
 
 
 import com.example.seb45pre011.answer.Answer;
+import com.example.seb45pre011.post.Post;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.lang.Nullable;
@@ -47,6 +48,12 @@ public class Member implements UserDetails {
     @Column(nullable = false)
     private String nick;
 
+    @OneToMany(mappedBy = "member")
+    private List<Post> post;
+
+    @OneToMany(mappedBy = "member")
+    private List<Answer> answers;
+
     @CreationTimestamp
     private LocalDateTime createAt = LocalDateTime.now();
 
@@ -54,28 +61,24 @@ public class Member implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> roles = new ArrayList<>();
 
-
-    public void setRoles(String email){
-//        if(email.equals()){   //관리자 계정 이메일 넣으면 됨.
-//            roles.add("USER");
-//            roles.add("ADMIN");
-//        }
-        roles.add("USER");
-    }
     @Enumerated(EnumType.STRING)
     @Column
     private MemberStatus memberStatus = MemberStatus.MEMBER_ACTIVE;
 
 
+    public void setRoles(String email){
+        if(email.equals("admin@naver.com")){   //관리자 계정 이메일 넣으면 됨.
+            roles.add("USER");
+            roles.add("ADMIN");
+        }
+        roles.add("USER");
+    }
     @Override   //사용자의 권한 목록 리턴
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
-
-
-
     @Override
     public String getUsername() {
         return username;
@@ -114,6 +117,5 @@ public class Member implements UserDetails {
             this.status = status;
         }
     }
-    @ManyToMany(mappedBy = "members")
-    private Set<Answer> answers = new HashSet<>();
+
 }

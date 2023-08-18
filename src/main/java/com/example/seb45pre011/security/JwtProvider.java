@@ -1,8 +1,6 @@
 package com.example.seb45pre011.security;
 
 import io.jsonwebtoken.*;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,40 +11,49 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.*;
 
 @Component
-@RequiredArgsConstructor
 public class JwtProvider {
 
     @Value("${jwt.password}")
     private String secretKey;
 
-    @Value("${jwt.validTime}")
-    private long validTime;
+    @Value("${jwt.accessTokenValidTime}")
+    private long accessTokenValidTime;
 
-    private UserDetailsService userDetailsService;
 
+
+    // 주입을 통해 해결
+    private final UserDetailsService userDetailsService;
+
+    public JwtProvider(UserDetailsService  userDetailsService){
+        this.userDetailsService = userDetailsService;
+    }
     @PostConstruct
     protected void init(){
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+
+
     public String createToken(String userPk, List<String> roles) {
         Claims claims = Jwts.claims().setSubject(userPk);
         claims.put("roles",roles);
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + validTime);
 
-        return Jwts.builder()
+
+        return  Jwts.builder()
                 .setClaims(claims)
                 .setIssuer("CodeStates pre 11")
                 .setIssuedAt(now)
-                .setExpiration(expiration)
+                .setExpiration(new Date(now.getTime()+accessTokenValidTime))
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
+
     }
+
+
 
     public Authentication getAuthentication(String token){
         UserDetails userDetails = userDetailsService.loadUserByUsername(this.getUserPk(token));

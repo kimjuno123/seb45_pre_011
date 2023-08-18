@@ -1,10 +1,10 @@
 package com.example.seb45pre011.security;
 
 //import com.example.seb45pre011.member.CustomOAuth2UserService;
+
+import com.example.seb45pre011.member.TokenBlackList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -22,6 +22,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     //    private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtProvider jwtProvider;
+    private final TokenBlackList tokenBlackList;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,6 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
                 .antMatchers("/h2/**").permitAll()// H2 데이터베이스 콘솔 접근 허용
+                .antMatchers("/mypage/**").hasAnyRole("USER","ADMIN")   // 인증된 사용자만 접근 가능한 경로
                 .anyRequest().authenticated()
                 .and()
                 .cors().disable()
@@ -47,8 +49,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider,tokenBlackList), UsernamePasswordAuthenticationFilter.class);
     }
+
 
     @Override
     public void configure (WebSecurity web) throws Exception {
